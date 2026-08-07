@@ -64,8 +64,11 @@ Two steps: paste the prompt below into Lovable, then point it at your deployed b
 >    horizontal diverging bar: the bar length is `|contribution|` normalised against the
 >    largest absolute contribution in the list; red/right when `direction` is
 >    `"increases"`, blue/left when `"decreases"`. Show `label` as the row title and
->    `value` as a muted subtitle. Add a footnote: *"Contributions are SHAP values showing
->    how each factor moved this patient's score. They explain the model, not causation."*
+>    `value` as a muted subtitle. **If a driver has `imputed: true`, append an "estimated"
+>    chip to that row and grey it back** — those values were assumed from population
+>    medians, and presenting one as an observed finding would mislead a clinician.
+>    Add a footnote: *"Contributions are SHAP values showing how each factor moved this
+>    patient's score. They explain the model, not causation."*
 > 5. **An assumptions notice** — if `imputed_fields` is non-empty, show a collapsible
 >    info box: "N optional fields were estimated from population averages. Supplying
 >    them would improve accuracy." List the field names inside.

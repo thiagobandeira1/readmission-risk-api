@@ -109,6 +109,7 @@ class Driver(BaseModel):
     value: float
     contribution: float = Field(..., description="SHAP contribution on the log-odds scale")
     direction: Literal["increases", "decreases"]
+    imputed: bool = Field(..., description="True if this value was filled from the training median rather than supplied by the caller")
 
 
 class PredictionResponse(BaseModel):

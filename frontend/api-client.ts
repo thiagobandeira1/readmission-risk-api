@@ -86,6 +86,9 @@ export interface Driver {
   /** SHAP value on the log-odds scale. Positive pushes risk up. */
   contribution: number;
   direction: "increases" | "decreases";
+  /** True when this value was assumed from population medians, not supplied.
+   *  Mark these visually — never present an assumption as an observed finding. */
+  imputed: boolean;
 }
 
 export interface PredictionResponse {

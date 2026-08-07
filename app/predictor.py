@@ -101,6 +101,7 @@ class Predictor:
         base = float(contribs[-1])
         order = np.argsort(np.abs(shap_vals))[::-1][:top_k]
 
+        imputed_set = set(imputed)
         drivers = [
             {
                 "feature": self.feature_order[i],
@@ -108,6 +109,9 @@ class Predictor:
                 "value": float(x[0, i]),
                 "contribution": float(shap_vals[i]),
                 "direction": "increases" if shap_vals[i] > 0 else "decreases",
+                # True when this value was assumed rather than supplied: the UI must
+                # not present an imputed field as if it were an observed finding.
+                "imputed": self.feature_order[i] in imputed_set,
             }
             for i in order
         ]
