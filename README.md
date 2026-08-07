@@ -112,8 +112,10 @@ the patient.
 
 ## Frontend
 
-The **RiskPath Console** frontend is schema-driven: it renders its entire form from
-`/metadata`, so adding or removing a model feature requires no frontend change.
+The **RiskPath Console** frontend
+([riskpath-clinician-companion](https://github.com/thiagobandeira1/riskpath-clinician-companion),
+two-way synced with the Lovable project) is schema-driven: it renders its entire form
+from `/metadata`, so adding or removing a model feature requires no frontend change.
 See `frontend/LOVABLE_PROMPT.md`.
 
 ## Run locally
