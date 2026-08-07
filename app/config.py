@@ -49,3 +49,11 @@ DERIVATION_ONLY_INPUTS = ["n_diagnoses", "creatinine_last", "race"]
 # Any optional field left null is filled with the training-set median and named
 # in the response's `imputed_fields`, so a caller always knows what was assumed.
 RISK_TIER_LABELS = ["Low", "Moderate", "High", "Very High"]
+
+
+def client_facing_fields(feature_order: list[str]) -> list[str]:
+    """Fields a caller supplies: every model feature the server does not compute,
+    plus the inputs that exist only to build derived features."""
+    fields = [f for f in feature_order if f not in SERVER_COMPUTED]
+    fields += [f for f in DERIVATION_ONLY_INPUTS if f not in fields]
+    return fields

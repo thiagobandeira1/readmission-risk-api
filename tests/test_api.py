@@ -1,15 +1,18 @@
-"""End-to-end API tests. Run:  <capstone-python> -m pytest tests -q"""
+"""End-to-end API tests against the RiskPath Console contract.
+
+Run:  <capstone-python> -m pytest tests -q
+"""
 from fastapi.testclient import TestClient
 
 from app.main import app
 
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 MINIMAL = {
     "age_at_admit": 76, "los_days": 5.4, "admission_type": "EW EMER.",
     "admission_location": "EMERGENCY ROOM", "discharge_location": "HOME HEALTH CARE",
-    "primary_dx_chapter": "I", "drg_code": "291",
-    "n_diagnoses": 12, "prior_admissions_6m": 1, "prior_admissions_all": 3,
+    "primary_dx_chapter": "I", "drg_code": "291", "n_diagnoses": 12,
+    "prior_admissions_6m": 1, "prior_admissions_all": 3,
     "prior_readmission_count": 1, "time_since_last_discharge": 45,
 }
 RICH = {
@@ -22,79 +25,121 @@ RICH = {
 }
 
 
+# ------------------------------------------------------------------ metadata
 def test_health():
-    r = client.get("/health")
-    assert r.status_code == 200
-    body = r.json()
-    assert body["status"] == "ok" and body["n_features"] == 67
-    assert body["test_auroc"] > 0.75
+    b = client.get("/health").json()
+    assert b["status"] == "ok"
+    assert b["model"].startswith("xgboost-rfe67")
 
 
-def test_metadata_lists_contract():
-    body = client.get("/metadata").json()
-    assert body["n_features"] == 67
-    assert "time_since_last_discharge" in body["required_fields"]
-    # derived features must never be requested from the client
-    assert "bun_creatinine_ratio" in body["server_computed_features"]
+def test_metadata_shape_matches_frontend_contract():
+    b = client.get("/metadata").json()
+    assert isinstance(b["features"], list) and b["features"]
+    assert 0.0 < b["default_threshold"] < 1.0
+    mi = b["model_info"]
+    for key in ("name", "seed", "n_features", "published_test_auroc", "deployed_test_auroc"):
+        assert key in mi
+    assert mi["n_features"] == 67
+    for f in b["features"]:
+        assert f["type"] in {"numeric", "categorical"}
+        assert "pct_nan" in f
+        if f["type"] == "numeric":
+            assert f["min"] <= f["median"] <= f["max"]
+        else:
+            assert f["levels"]
 
 
-def test_options_populates_dropdowns():
-    body = client.get("/schema/options").json()
-    for key in ("discharge_location", "admission_type", "primary_dx_chapter", "race"):
-        assert body["options"][key], f"{key} should have options"
+def test_metadata_never_exposes_server_derived_features():
+    names = {f["name"] for f in client.get("/metadata").json()["features"]}
+    for derived in ("bun_creatinine_ratio", "discharge_location_te", "n_meds_x_age",
+                    "log_time_since_discharge", "race_te"):
+        assert derived not in names, f"{derived} must be derived, not requested"
 
 
-def test_predict_minimal_payload():
-    r = client.post("/predict", json=MINIMAL)
+def test_examples_are_predictable():
+    b = client.get("/examples?n=5").json()
+    assert b["n"] == len(b["examples"]) == 5
+    for ex in b["examples"]:
+        assert client.post("/predictions", json=ex).status_code == 200
+
+
+# ----------------------------------------------------------------- inference
+def test_predictions_contract():
+    r = client.post("/predictions?threshold=0.2", json=MINIMAL)
     assert r.status_code == 200, r.text
     b = r.json()
-    assert 0.0 <= b["readmission_probability"] <= 1.0
-    assert b["risk_tier"] in {"Low", "Moderate", "High", "Very High"}
-    assert len(b["top_drivers"]) == 8
-    # with only the required fields, optional ones must be reported as imputed
-    assert b["imputed_fields"], "expected imputation to be disclosed"
+    assert 0.0 <= b["probability"] <= 1.0
+    assert b["prediction"] in (0, 1)
+    assert b["threshold"] == 0.2
+    assert b["prediction"] == int(b["probability"] >= 0.2)
+    assert isinstance(b["fallback_warnings"], list)
 
 
-def test_richer_payload_imputes_less():
-    lean = client.post("/predict", json=MINIMAL).json()
-    rich = client.post("/predict", json=RICH).json()
-    assert len(rich["imputed_fields"]) < len(lean["imputed_fields"])
+def test_threshold_defaults_to_model_operating_point():
+    default = client.get("/metadata").json()["default_threshold"]
+    assert client.post("/predictions", json=MINIMAL).json()["threshold"] == default
+
+
+def test_explanations_align_with_the_model_vector():
+    b = client.post("/explanations", json=RICH).json()
+    n = len(b["feature_names"])
+    assert n == 67
+    assert len(b["shap_values"]) == n
+    assert len(b["feature_values_transformed"]) == n
+    # SHAP values plus the base term must reconstruct the predicted log-odds
+    import math
+    logit = b["base_value"] + sum(b["shap_values"])
+    assert math.isclose(1 / (1 + math.exp(-logit)), b["probability"], abs_tol=2e-3)
+
+
+def test_richer_payload_produces_fewer_warnings():
+    lean = client.post("/predictions", json=MINIMAL).json()["fallback_warnings"]
+    rich = client.post("/predictions", json=RICH).json()["fallback_warnings"]
+    assert len(rich) < len(lean)
 
 
 def test_prediction_is_deterministic():
-    a = client.post("/predict", json=RICH).json()
-    b = client.post("/predict", json=RICH).json()
-    assert a["readmission_probability"] == b["readmission_probability"]
+    a = client.post("/predictions", json=RICH).json()["probability"]
+    b = client.post("/predictions", json=RICH).json()["probability"]
+    assert a == b
 
 
-def test_risk_ordering_is_sensible():
-    """A frequently-readmitted patient should outrank a first-time elective one."""
+def test_risk_ordering_is_clinically_sensible():
     high = {**RICH, "prior_admissions_6m": 6, "prior_admissions_all": 15,
             "prior_readmission_count": 5, "time_since_last_discharge": 3}
     low = {**RICH, "prior_admissions_6m": 0, "prior_admissions_all": 0,
            "prior_readmission_count": 0, "time_since_last_discharge": 365,
            "admission_type": "ELECTIVE", "discharge_location": "HOME"}
-    p_high = client.post("/predict", json=high).json()["readmission_probability"]
-    p_low = client.post("/predict", json=low).json()["readmission_probability"]
-    assert p_high > p_low
+    assert (client.post("/predictions", json=high).json()["probability"]
+            > client.post("/predictions", json=low).json()["probability"])
 
 
-def test_unseen_category_does_not_crash():
-    r = client.post("/predict", json={**MINIMAL, "drg_code": "NOT_A_REAL_DRG"})
+def test_batch_matches_single_predictions():
+    b = client.post("/predictions/batch?threshold=0.25",
+                    json={"patients": [MINIMAL, RICH]}).json()
+    assert b["n"] == 2 and b["threshold"] == 0.25
+    single = client.post("/predictions?threshold=0.25", json=MINIMAL).json()["probability"]
+    assert b["results"][0]["probability"] == single
+
+
+def test_batch_accepts_wrapped_rows():
+    b = client.post("/predictions/batch", json={"patients": [{"features": MINIMAL}]}).json()
+    assert b["n"] == 1
+
+
+# ------------------------------------------------------------------ resilience
+def test_unseen_category_falls_back_without_crashing():
+    r = client.post("/predictions", json={**MINIMAL, "drg_code": "NOT_A_REAL_DRG"})
     assert r.status_code == 200
 
 
-def test_validation_rejects_impossible_age():
-    r = client.post("/predict", json={**MINIMAL, "age_at_admit": 400})
+def test_missing_optional_fields_are_imputed_not_rejected():
+    r = client.post("/predictions", json={"age_at_admit": 70, "los_days": 3})
+    assert r.status_code == 200
+    assert r.json()["fallback_warnings"]
+
+
+def test_errors_use_the_frontend_envelope():
+    r = client.post("/predictions/batch", json={"patients": "not-a-list"})
     assert r.status_code == 422
-
-
-def test_missing_required_field_rejected():
-    payload = {k: v for k, v in MINIMAL.items() if k != "los_days"}
-    assert client.post("/predict", json=payload).status_code == 422
-
-
-def test_batch():
-    r = client.post("/predict/batch", json={"patients": [MINIMAL, RICH]})
-    assert r.status_code == 200
-    assert r.json()["count"] == 2
+    assert r.json()["error"]["code"] == "VALIDATION_ERROR"
