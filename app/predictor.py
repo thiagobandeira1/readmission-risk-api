@@ -38,13 +38,16 @@ class Predictor:
         """Human-readable notes about every value the server had to assume.
 
         A caller should be able to see exactly which numbers were theirs and which
-        came from the training distribution.
+        came from the training distribution. For categorical features the imputed
+        value is an encoded index, which would read as a nonsense number (e.g.
+        "median (4333)"), so those get a wording without the value.
         """
+        cat = set(self.artifacts.get("cat_maps", {}))
         out = []
         for f in sorted(imputed):
             med = self.medians.get(f)
-            if med is None:
-                out.append(f"'{f}' was not supplied; a default was used.")
+            if f in cat or med is None:
+                out.append(f"'{f}' was not supplied; a typical category was assumed.")
             else:
                 out.append(f"'{f}' was not supplied; using the training median ({med:g}).")
         return out
