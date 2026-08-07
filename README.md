@@ -78,7 +78,7 @@ Interactive docs at `/docs`; machine-readable schema at `/openapi.json`.
 ### Example
 
 ```bash
-curl -X POST http://localhost:8000/predict \
+curl -X POST http://localhost:8000/predictions \
   -H "Content-Type: application/json" \
   -d '{
     "age_at_admit": 76, "los_days": 5.4,

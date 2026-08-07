@@ -30,6 +30,7 @@ class Predictor:
         self.feature_order: list[str] = self.artifacts["feature_order"]
         self.threshold: float = float(self.artifacts["threshold"])
         self.medians: dict[str, float] = self.artifacts["medians"]
+        self.tiers: dict[str, float] = self.artifacts["tiers"]
         seed = self.metadata.get("seed", 42)
         self.model_name: str = f"xgboost-rfe{len(self.feature_order)}-seed{seed}"
 

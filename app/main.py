@@ -108,6 +108,16 @@ def metadata() -> dict:
             "deployed_test_auroc": m["test_auroc"],  # this artifact, re-measured
         },
         "default_threshold": p.threshold,
+        # Empirical cut-points from validation-set quantiles (50th/80th/95th).
+        # Fixed bands like 0.30/0.60/0.85 do not suit this model: with a 21%
+        # base rate its 95th percentile is only ~0.58, so a fixed scale would
+        # label almost every patient "low" and never use the top band.
+        "risk_bands": {
+            "low_max": p.tiers["low_max"],
+            "moderate_max": p.tiers["moderate_max"],
+            "high_max": p.tiers["high_max"],
+            "basis": "validation-set quantiles (p50 / p80 / p95)",
+        },
         "required_fields": REQUIRED_FIELDS,
         "disclaimer": (
             "Research prototype trained on MIMIC-IV v3.1. Not externally validated, "
