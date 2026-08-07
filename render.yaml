@@ -3,7 +3,7 @@ services:
   - type: web
     name: readmission-api
     runtime: docker
-    plan: starter
+    plan: free
     healthCheckPath: /health
     envVars:
       - key: ALLOWED_ORIGINS
