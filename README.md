@@ -58,11 +58,20 @@ knows what was assumed on their behalf. More fields supplied → fewer assumptio
 
 | Method | Path | Purpose |
 |---|---|---|
-| `GET` | `/health` | Liveness, loaded model version, test AUROC |
-| `GET` | `/metadata` | Model card: metrics, full feature list, split, disclaimer |
-| `GET` | `/schema/options` | Valid categorical values — use to populate UI dropdowns |
-| `POST` | `/predict` | One patient |
-| `POST` | `/predict/batch` | Up to 500 patients |
+| `GET` | `/health` | Liveness + model identifier |
+| `GET` | `/metadata` | Feature schema (drives the UI form), model card, default threshold |
+| `GET` | `/examples?n=5` | Synthetic demo patients |
+| `POST` | `/predictions?threshold=` | One patient → probability + class |
+| `POST` | `/explanations` | One patient → SHAP attributions over all 67 features |
+| `POST` | `/predictions/batch?threshold=` | Up to 1000 patients |
+
+Requests are a flat `{feature: value}` object. Errors use the envelope
+`{"error": {"code", "message", "details"}}`, with `code` one of `VALIDATION_ERROR`
+or `INTERNAL_ERROR`. Fields the caller omits are imputed and reported in
+`fallback_warnings`.
+
+`/metadata` deliberately lists **only** the 54 client-supplied fields — the 16 the
+server derives are absent, so the UI can never be asked for a target encoding.
 
 Interactive docs at `/docs`; machine-readable schema at `/openapi.json`.
 
@@ -86,21 +95,26 @@ curl -X POST http://localhost:8000/predict \
 
 ```jsonc
 {
-  "readmission_probability": 0.195653,
-  "risk_tier": "Moderate",
-  "flagged": false,
+  "probability": 0.195653,
+  "prediction": 0,
   "threshold": 0.196578,
-  "top_drivers": [
-    { "label": "Length-of-stay trend (180 days)", "contribution": 0.1409, "direction": "increases" },
-    { "label": "Days since last discharge",       "contribution": 0.0749, "direction": "increases" }
-  ],
-  "imputed_fields": ["bmi_last", "..."],
-  "model_version": "RFE-67"
+  "model_name": "xgboost-rfe67-seed42",
+  "fallback_warnings": [
+    "'bmi_last' was not supplied; using the training median (27.7)."
+  ]
 }
 ```
 
-`contribution` is the feature's SHAP value on the log-odds scale — it explains what the
-*model* did, and is not a causal claim about the patient.
+`POST /explanations` returns `shap_values`, `base_value`, `feature_names` and
+`feature_values_transformed` for all 67 model features. SHAP values are on the
+log-odds scale and explain what the *model* did — they are not causal claims about
+the patient.
+
+## Frontend
+
+The **RiskPath Console** frontend is schema-driven: it renders its entire form from
+`/metadata`, so adding or removing a model feature requires no frontend change.
+See `frontend/LOVABLE_PROMPT.md`.
 
 ## Run locally
 
