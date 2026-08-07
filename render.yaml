@@ -1,0 +1,10 @@
+# One-click deploy on Render (render.com). Fly.io/Railway read the Dockerfile directly.
+services:
+  - type: web
+    name: readmission-api
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        sync: false   # set to your Lovable app URL after the frontend is deployed
