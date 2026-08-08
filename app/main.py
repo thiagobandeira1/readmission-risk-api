@@ -118,6 +118,7 @@ def metadata() -> dict:
             "high_max": p.tiers["high_max"],
             "basis": "validation-set quantiles (p50 / p80 / p95)",
         },
+        "trajectory_available": p.trajectory_available,
         "required_fields": REQUIRED_FIELDS,
         "disclaimer": (
             "Research prototype trained on MIMIC-IV v3.1. Not externally validated, "
@@ -164,6 +165,26 @@ def explanations(features: dict) -> dict:
         "model_name": p.model_name,
         "fallback_warnings": r["fallback_warnings"],
     }
+
+
+@app.post("/predictions/trajectory", tags=["inference"])
+def predictions_trajectory(features: dict) -> dict:
+    """Cumulative probability of readmission on each day of the 30-day window.
+
+    Answers *when*, not just *whether*: the binary endpoints return one number for
+    the whole window, this one returns the risk trajectory across it.
+    """
+    p = get_predictor()
+    if not p.trajectory_available:
+        return JSONResponse(
+            status_code=503,
+            content=_envelope("INTERNAL_ERROR", "Trajectory model is not loaded on this server."),
+        )
+    r = p.predict_trajectory(features)
+    r["model_name"] = p.aft_model_name
+    r["disclaimer"] = ("Parametric AFT estimate; deaths treated as censoring; "
+                       "research prototype.")
+    return r
 
 
 @app.post("/predictions/batch", tags=["inference"])

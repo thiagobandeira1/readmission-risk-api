@@ -139,6 +139,52 @@ def test_missing_optional_fields_are_imputed_not_rejected():
     assert r.json()["fallback_warnings"]
 
 
+# ------------------------------------------------------------------ trajectory
+def test_metadata_advertises_trajectory():
+    assert client.get("/metadata").json()["trajectory_available"] is True
+
+
+def test_trajectory_is_a_valid_cumulative_curve():
+    b = client.post("/predictions/trajectory", json=RICH).json()
+    days, cum = b["days"], b["cumulative_probability"]
+    assert days == list(range(1, 31))
+    assert len(cum) == len(b["daily_increment"]) == 30
+    assert all(0.0 <= v <= 1.0 for v in cum)
+    assert all(cum[i] >= cum[i - 1] for i in range(1, 30)), "cumulative must be non-decreasing"
+    assert b["horizon_probability"] == cum[-1]
+    assert b["model_name"].startswith("xgboost-aft")
+    assert "research prototype" in b["disclaimer"]
+
+
+def test_daily_increments_reconstruct_the_curve():
+    b = client.post("/predictions/trajectory", json=RICH).json()
+    running = 0.0
+    for inc, cum in zip(b["daily_increment"], b["cumulative_probability"]):
+        running += inc
+        assert abs(running - cum) < 1e-4
+
+
+def test_trajectory_orders_high_and_low_risk_patients():
+    high = {**RICH, "prior_admissions_6m": 6, "prior_admissions_all": 15,
+            "prior_readmission_count": 5, "time_since_last_discharge": 3,
+            "discharge_location": "SKILLED NURSING FACILITY"}
+    low = {**RICH, "prior_admissions_6m": 0, "prior_admissions_all": 0,
+           "prior_readmission_count": 0, "time_since_last_discharge": 365,
+           "admission_type": "ELECTIVE", "discharge_location": "HOME"}
+    h = client.post("/predictions/trajectory", json=high).json()
+    lo = client.post("/predictions/trajectory", json=low).json()
+    assert h["cumulative_probability"][6] > lo["cumulative_probability"][6]   # day 7
+    assert h["horizon_probability"] > lo["horizon_probability"]
+    # a higher-risk patient is expected back sooner
+    assert h["median_predicted_day"] < lo["median_predicted_day"]
+
+
+def test_trajectory_imputes_missing_fields():
+    b = client.post("/predictions/trajectory", json={"age_at_admit": 70, "los_days": 3}).json()
+    assert len(b["cumulative_probability"]) == 30
+    assert b["fallback_warnings"]
+
+
 def test_errors_use_the_frontend_envelope():
     r = client.post("/predictions/batch", json={"patients": "not-a-list"})
     assert r.status_code == 422

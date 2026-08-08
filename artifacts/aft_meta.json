@@ -1,0 +1,7 @@
+{
+  "sigma": 1.0,
+  "distribution": "normal",
+  "harrell_c_test": 0.7536,
+  "trained": "170,677 train / 18,557 val / 47,672 test alive-discharge rows, patient-grouped v7 split",
+  "best_iteration": 599
+}

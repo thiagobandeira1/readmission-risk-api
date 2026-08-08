@@ -9,6 +9,8 @@ ARTIFACT_DIR = ROOT / "artifacts"
 MODEL_PATH = ARTIFACT_DIR / "model.json"
 SERVING_PATH = ARTIFACT_DIR / "serving_artifacts.joblib"
 METADATA_PATH = ARTIFACT_DIR / "metadata.json"
+AFT_MODEL_PATH = ARTIFACT_DIR / "aft_model.json"
+AFT_META_PATH = ARTIFACT_DIR / "aft_meta.json"
 
 API_TITLE = "30-Day Readmission Risk API"
 API_VERSION = "1.0.0"
