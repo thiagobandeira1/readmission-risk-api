@@ -43,7 +43,16 @@ DF = DF.merge(race, on="hadm_id", how="left")
 DF["race"] = DF["race"].fillna("UNKNOWN")
 
 FEATURES = json.loads((RESULTS / "rfe_selection_results.json").read_text())["rfe_selected"]
-assert len(FEATURES) == 67, f"expected 67 features, got {len(FEATURES)}"
+assert len(FEATURES) == 67, f"expected 67 RFE features, got {len(FEATURES)}"
+# race_te is a target encoding whose predictive value comes from an observed
+# difference in outcome rates rather than a clinical mechanism. The ablation in
+# results/race_ablation.json shows it contributes nothing to discrimination
+# (0.7946 with, 0.7947 without, p = 0.77), so it is excluded from the deployed
+# model, consistent with the removal of race terms from clinical equations such
+# as eGFR. The excluded-feature list is explicit so the reason survives here.
+EXCLUDED = ["race_te"]
+FEATURES = [f for f in FEATURES if f not in EXCLUDED]
+assert len(FEATURES) == 66, f"expected 66 deployed features, got {len(FEATURES)}"
 y = DF["readmit_30d"].to_numpy().astype(int)
 print(f"[{time.time()-t0:.0f}s] frame {DF.shape}, features {len(FEATURES)}, prevalence {y.mean():.4f}", flush=True)
 
@@ -58,7 +67,6 @@ TE_PAIRS = {
     "discharge_location_te": "discharge_location",
     "drg_code_te":           "drg_code",
     "last_drg_dispo_te":     "last_drg_dispo",
-    "race_te":               "race",
 }
 te_maps, te_globals = {}, {}
 train_df = DF.iloc[tr]

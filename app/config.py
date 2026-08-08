@@ -33,7 +33,7 @@ DERIVED_FEATURES = [
 # 5 target encodings, resolved through maps fitted on the training split only
 TE_FEATURES = [
     "primary_dx_chapter_te", "discharge_location_te", "drg_code_te",
-    "last_drg_dispo_te", "race_te",
+    "last_drg_dispo_te",
 ]
 SERVER_COMPUTED = set(DERIVED_FEATURES) | set(TE_FEATURES)
 
@@ -46,7 +46,9 @@ REQUIRED_FIELDS = [
 ]
 
 # --- inputs used only to build derived features, never fed to the model raw ---
-DERIVATION_ONLY_INPUTS = ["n_diagnoses", "creatinine_last", "race"]
+# race is deliberately absent: the deployed model does not use it (see
+# results/race_ablation.json and the exclusion in train_deployment_model.py).
+DERIVATION_ONLY_INPUTS = ["n_diagnoses", "creatinine_last"]
 
 # Any optional field left null is filled with the training-set median and named
 # in the response's `imputed_fields`, so a caller always knows what was assumed.

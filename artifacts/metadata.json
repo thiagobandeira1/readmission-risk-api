@@ -1,7 +1,7 @@
 {
   "model": "XGBClassifier",
   "feature_set": "RFE-67",
-  "n_features": 67,
+  "n_features": 66,
   "features": [
     "admission_type",
     "admission_location",
@@ -67,27 +67,26 @@
     "log_time_since_discharge",
     "new_med_rate_48h",
     "los_per_prior_admit",
-    "race_te",
     "bp_diastolic_outpatient",
     "comorbidity_pc4"
   ],
   "metrics": {
-    "test_auroc": 0.7965926303432032,
-    "test_average_precision": 0.5194270241630999,
-    "test_brier": 0.13238761717182787,
-    "test_ece": 0.005538717279414142,
-    "mean_predicted": 0.20991966128349304,
+    "test_auroc": 0.7956816419950385,
+    "test_average_precision": 0.5177624018477617,
+    "test_brier": 0.13261739133970094,
+    "test_ece": 0.004700062938507243,
+    "mean_predicted": 0.21044470369815826,
     "observed_rate": 0.20912362017442215,
-    "operating_threshold": 0.19657760858535767,
-    "best_iteration": 597,
+    "operating_threshold": 0.2175961434841156,
+    "best_iteration": 571,
     "n_train": 176270,
     "n_val": 19115,
     "n_test": 49191
   },
   "tiers": {
-    "low_max": 0.1703438013792038,
-    "moderate_max": 0.34494609832763673,
-    "high_max": 0.5762656271457672
+    "low_max": 0.17218902707099915,
+    "moderate_max": 0.341554468870163,
+    "high_max": 0.581003332138061
   },
   "training_data": "MIMIC-IV v3.1 Medicare cohort (244,576 admissions)",
   "split": "patient-grouped (subject_id), identical to the manuscript",

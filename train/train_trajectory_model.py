@@ -49,9 +49,10 @@ v7_unique = [c for c in V7.columns if c not in V10.columns]
 DF = pd.concat([V10.reset_index(drop=True), V7[v7_unique].reset_index(drop=True)], axis=1)
 
 serving = joblib.load(ART / "serving_artifacts.joblib")
-FEATURES = json.loads((RESULTS / "rfe_selection_results.json").read_text())["rfe_selected"]
-assert len(FEATURES) == 67, f"expected 67 features, got {len(FEATURES)}"
-assert FEATURES == serving["feature_order"], "feature order drifted from the deployed model"
+# Mirror the deployed model exactly, including the race_te exclusion.
+FEATURES = list(serving["feature_order"])
+assert "race_te" not in FEATURES, "race_te must not be in the deployed feature set"
+assert len(FEATURES) == 66, f"expected 66 deployed features, got {len(FEATURES)}"
 CAT_FEATURES = serving["categorical_features"]
 cat_maps = serving["cat_maps"]
 

@@ -35,8 +35,8 @@ app = FastAPI(
     version=API_VERSION,
     description=(
         "Predicts 30-day all-cause hospital readmission risk for Medicare patients "
-        "from structured EHR data. XGBoost over 67 features selected by recursive "
-        "feature elimination on the MIMIC-IV v3.1 Medicare cohort (244,576 admissions).\n\n"
+        "from structured EHR data. XGBoost over 66 features selected by recursive "
+        "feature elimination (race excluded) on the MIMIC-IV v3.1 Medicare cohort (244,576 admissions).\n\n"
         "**Research prototype — not a medical device.** Intended to help prioritise "
         "transitional-care resources, never to withhold or reduce care. Not externally "
         "validated or prospectively evaluated."
@@ -104,7 +104,7 @@ def metadata() -> dict:
             "name": p.model_name,
             "seed": p.metadata.get("seed", 42),
             "n_features": len(p.feature_order),
-            "published_test_auroc": 0.7960,          # RFE result reported in the manuscript
+            "published_test_auroc": 0.7957,          # V8 value reported in the manuscript
             "deployed_test_auroc": m["test_auroc"],  # this artifact, re-measured
         },
         "default_threshold": p.threshold,
