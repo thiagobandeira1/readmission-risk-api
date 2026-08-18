@@ -3,7 +3,7 @@
 FastAPI service that predicts 30-day all-cause hospital readmission risk for Medicare
 patients from structured EHR data, and explains every prediction.
 
-Backing research: *Predicting 30-Day Hospital Readmission in Medicare Patients — an
+Backing research: *Predicting 30-Day Hospital Readmission in Medicare Patients: an
 interpretable gradient-boosting model on MIMIC-IV v3.1.*
 
 > **Research prototype, not a medical device.** The model has not been externally
@@ -16,19 +16,19 @@ interpretable gradient-boosting model on MIMIC-IV v3.1.*
 |---|---|
 | Algorithm | XGBoost (gradient-boosted trees) |
 | Features | **67**, selected by recursive feature elimination from a 207-feature pool |
-| Training data | MIMIC-IV v3.1 Medicare cohort — 244,576 admissions, 21.1% readmitted |
+| Training data | MIMIC-IV v3.1 Medicare cohort: 244,576 admissions, 21.1% readmitted |
 | Split | Patient-grouped on `subject_id` (no patient in both train and test) |
 | **Test AUROC** | **0.7966** |
 | Average precision | 0.5194 (vs 0.209 base rate) |
 | Brier score | 0.1324 |
-| **Calibration (ECE)** | **0.0055** — mean predicted 0.2099 vs observed 0.2091 |
+| **Calibration (ECE)** | **0.0055** (mean predicted 0.2099 vs observed 0.2091) |
 
 Calibration matters here: the API returns a probability meant to be read literally,
 so that a score can be compared against an intervention budget.
 
 ## Design: the client sends raw values, the server does the feature engineering
 
-Of the 67 model features, 16 are not things anybody can type into a form — 11 are
+Of the 67 model features, 16 are not things anybody can type into a form; 11 are
 algebraic derivations and 5 are target encodings that require maps fitted on the
 training split. Asking a UI for `discharge_location_te = 0.2637` would be absurd and
 would let clients drift away from how the model was trained.
@@ -70,7 +70,7 @@ Requests are a flat `{feature: value}` object. Errors use the envelope
 or `INTERNAL_ERROR`. Fields the caller omits are imputed and reported in
 `fallback_warnings`.
 
-`/metadata` deliberately lists **only** the 54 client-supplied fields — the 16 the
+`/metadata` deliberately lists **only** the 54 client-supplied fields; the 16 the
 server derives are absent, so the UI can never be asked for a target encoding.
 
 Interactive docs at `/docs`; machine-readable schema at `/openapi.json`.
@@ -107,7 +107,7 @@ curl -X POST http://localhost:8000/predictions \
 
 `POST /explanations` returns `shap_values`, `base_value`, `feature_names` and
 `feature_values_transformed` for all 67 model features. SHAP values are on the
-log-odds scale and explain what the *model* did — they are not causal claims about
+log-odds scale and explain what the *model* did; they are not causal claims about
 the patient.
 
 ## Frontend
@@ -152,7 +152,7 @@ python train/train_deployment_model.py
 
 Rebuilds the model and every serving artifact (target-encoding maps, categorical
 encoders, medians, operating threshold, risk-tier cut-points) into `artifacts/`.
-Requires the MIMIC-IV derived tables, which are **not** in this repository —
+Requires the MIMIC-IV derived tables, which are **not** in this repository;
 MIMIC-IV is credentialed data available from PhysioNet under a data-use agreement.
 
 ## Layout

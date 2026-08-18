@@ -1,7 +1,7 @@
 """Train the survival:aft trajectory model on the SAME 67-feature matrix the
 deployed binary model uses.
 
-Feature set  : identical to the deployed model — the RFE-67 columns, encoded with
+Feature set  : identical to the deployed model: the RFE-67 columns, encoded with
                the cat_maps persisted in artifacts/serving_artifacts.joblib, so the
                matrix here is bit-for-bit the one train_deployment_model.py built.
 Labels       : time-to-readmission per the survival analysis reference

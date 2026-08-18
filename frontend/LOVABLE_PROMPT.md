@@ -4,7 +4,7 @@ Two steps: paste the prompt below into Lovable, then point it at your deployed b
 
 ---
 
-## Step 1 — paste this into Lovable
+## Step 1: paste this into Lovable
 
 > Update the app to call a real prediction API instead of any mock/placeholder logic.
 >
@@ -21,42 +21,42 @@ Two steps: paste the prompt below into Lovable, then point it at your deployed b
 > Build a single-page "Discharge Risk Assessment" form in three collapsible sections.
 > Only the first section is required; the other two improve accuracy and start collapsed.
 >
-> **Section 1 — Admission & History (all required):**
-> - `age_at_admit` — number, 18–120
-> - `los_days` — number, 0–400, one decimal
-> - `admission_type` — select from options
-> - `admission_location` — select from options
-> - `discharge_location` — select from options
-> - `primary_dx_chapter` — select from options (ICD chapter codes)
-> - `drg_code` — searchable select (there are ~390 values, so it needs a type-ahead)
-> - `n_diagnoses` — number, 0–100
-> - `prior_admissions_6m` — number, 0–100
-> - `prior_admissions_all` — number, 0–500
-> - `prior_readmission_count` — number, 0–200
-> - `time_since_last_discharge` — number in days; add helper text "enter 365 if this is the patient's first admission"
+> **Section 1: Admission & History (all required):**
+> - `age_at_admit`: number, 18 to 120
+> - `los_days`: number, 0 to 400, one decimal
+> - `admission_type`: select from options
+> - `admission_location`: select from options
+> - `discharge_location`: select from options
+> - `primary_dx_chapter`: select from options (ICD chapter codes)
+> - `drg_code`: searchable select (there are ~390 values, so it needs a type-ahead)
+> - `n_diagnoses`: number, 0 to 100
+> - `prior_admissions_6m`: number, 0 to 100
+> - `prior_admissions_all`: number, 0 to 500
+> - `prior_readmission_count`: number, 0 to 200
+> - `time_since_last_discharge`: number in days; add helper text "enter 365 if this is the patient's first admission"
 >
-> **Section 2 — Labs & Vitals (all optional):**
+> **Section 2: Labs & Vitals (all optional):**
 > `creatinine_last`, `bun_last`, `sodium_last`, `hemoglobin_last`, `albumin_last`,
 > `wbc_last`, `glucose_last`, `bicarbonate_last`, `bilirubin_max`, `bmi_last`,
-> `bp_diastolic_outpatient`, `lab_abnormal_rate` (0–1)
+> `bp_diastolic_outpatient`, `lab_abnormal_rate` (0 to 1)
 > Show the unit next to each label: mg/dL, mEq/L, g/dL, K/uL.
 >
-> **Section 3 — Medications, Orders & Comorbidities (all optional):**
+> **Section 3: Medications, Orders & Comorbidities (all optional):**
 > `n_meds_total`, `n_discharge_drugs`, `distinct_drugs`, `n_procedures`,
-> `n_distinct_providers`, `orders_per_day`, `n_late_orders`, `discharge_hour` (0–23),
+> `n_distinct_providers`, `orders_per_day`, `n_late_orders`, `discharge_hour` (0 to 23),
 > `los_trend_180d`, `prior_mean_los_6m`, `severity_composite`, `clinical_complexity`,
 > and toggles for `elix_mets`, `elix_solid_tumor`, `elix_psychoses` (send 1 or 0).
 > Also a `race` select (used only for a risk-encoding lookup).
 >
-> **Important:** omit optional fields entirely, or send `null` — never send `0` for
+> **Important:** omit optional fields entirely, or send `null`: never send `0` for
 > "unknown". Zero is a real clinical value and would corrupt the prediction.
 >
 > ### The result panel
 >
 > On success show:
-> 1. **A large probability** — `readmission_probability` formatted as a percentage with
+> 1. **A large probability**: `readmission_probability` formatted as a percentage with
 >    one decimal (e.g. "19.6%"), labelled "30-day readmission risk".
-> 2. **A risk-tier badge** — `risk_tier` is `"Low" | "Moderate" | "High" | "Very High"`.
+> 2. **A risk-tier badge**: `risk_tier` is `"Low" | "Moderate" | "High" | "Very High"`.
 >    Colour them emerald / amber / orange / red respectively.
 > 3. **A "flagged for follow-up" indicator** when `flagged` is true, with a tooltip
 >    explaining it means the score met the model's operating threshold.
@@ -65,11 +65,11 @@ Two steps: paste the prompt below into Lovable, then point it at your deployed b
 >    largest absolute contribution in the list; red/right when `direction` is
 >    `"increases"`, blue/left when `"decreases"`. Show `label` as the row title and
 >    `value` as a muted subtitle. **If a driver has `imputed: true`, append an "estimated"
->    chip to that row and grey it back** — those values were assumed from population
+>    chip to that row and grey it back**: those values were assumed from population
 >    medians, and presenting one as an observed finding would mislead a clinician.
 >    Add a footnote: *"Contributions are SHAP values showing how each factor moved this
 >    patient's score. They explain the model, not causation."*
-> 5. **An assumptions notice** — if `imputed_fields` is non-empty, show a collapsible
+> 5. **An assumptions notice**: if `imputed_fields` is non-empty, show a collapsible
 >    info box: "N optional fields were estimated from population averages. Supplying
 >    them would improve accuracy." List the field names inside.
 >
@@ -85,7 +85,7 @@ Two steps: paste the prompt below into Lovable, then point it at your deployed b
 >
 > Show this persistently in the footer, and in a dismissible banner on first load:
 >
-> > **Research prototype — not a medical device.** This model has not been externally
+> > **Research prototype: not a medical device.** This model has not been externally
 > > validated or prospectively evaluated. It is intended to help prioritise
 > > transitional-care resources, never to withhold or reduce care. Do not use it to make
 > > individual clinical decisions.
@@ -97,27 +97,27 @@ Two steps: paste the prompt below into Lovable, then point it at your deployed b
 
 ---
 
-## Step 2 — connect it
+## Step 2: connect it
 
 1. In Lovable, add an environment variable **`VITE_API_URL`** = your deployed backend URL
    (e.g. `https://readmission-api.onrender.com`). No trailing slash.
-2. Deploy the backend (see the repo README — Docker works on Render, Railway, Fly.io).
+2. Deploy the backend (see the repo README: Docker works on Render, Railway, Fly.io).
 3. Set **`ALLOWED_ORIGINS`** on the backend to your Lovable app URL, so CORS is
    restricted to your frontend rather than the permissive default.
 4. Confirm the wiring: the app's status badge should show `model_version: RFE-67` and
    `test_auroc: 0.7966`.
 
-`api-client.ts` in this folder is a ready-made typed client — paste it into
+`api-client.ts` in this folder is a ready-made typed client: paste it into
 `src/lib/readmissionApi.ts` if you would rather wire calls by hand than let Lovable
 generate the fetch layer.
 
 ## Local development against the API
 
 ```bash
-# terminal 1 — backend
+# terminal 1: backend
 uvicorn app.main:app --reload
 
-# terminal 2 — frontend
+# terminal 2: frontend
 VITE_API_URL=http://localhost:8000 npm run dev
 ```
 

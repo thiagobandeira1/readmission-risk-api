@@ -37,7 +37,7 @@ app = FastAPI(
         "Predicts 30-day all-cause hospital readmission risk for Medicare patients "
         "from structured EHR data. XGBoost over 66 features selected by recursive "
         "feature elimination (race excluded) on the MIMIC-IV v3.1 Medicare cohort (244,576 admissions).\n\n"
-        "**Research prototype — not a medical device.** Intended to help prioritise "
+        "**Research prototype, not a medical device.** Intended to help prioritise "
         "transitional-care resources, never to withhold or reduce care. Not externally "
         "validated or prospectively evaluated."
     ),
